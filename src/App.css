@@ -7,6 +7,13 @@
   pointer-events: none;
 }
 
+.black-key-row { position: absolute; z-index: 2; width:100%; margin-left:-1%; height: 250px; top: 109px;}
+.white-key-row { position: absolute; width:100%; height: 250px; top: 110px;}
+.key { display:inline-block; }
+.black { background: black; width: 2%; height: 150px; margin: 1px;  border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; }
+.spacer { display:inline-block; width: 2%; height: 0px; border: 1px solid rgba(0, 0, 0, 0);}
+.white { background: white; width: 2%; height: 250px; border: 1px solid black; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; }
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -36,3 +43,4 @@
     transform: rotate(360deg);
   }
 }
+

@@ -1,5 +1,6 @@
 import './App.css';
-import { useEffect } from 'react';
+import WhiteKeys from './components/WhiteKeys/WhiteKeys';
+import BlackKeys from './components/BlackKeys/BlackKeys';
 
 function App() {
   var voices = [];
@@ -135,6 +136,8 @@ function App() {
     <div className="App">
       <h1>MIDI Keyboard</h1>
       <button onClick={initAudio}>Begin</button>
+      <BlackKeys/>
+      <WhiteKeys/>
     </div>
     
   );
