@@ -72,15 +72,21 @@ function App() {
     console.log(`note on: ${note}`);
     if (voices[note] == null) {
       voices[note] = new Voice(note, velocity);
-      console.log(voices);
+      var currentNote = document.getElementById(`k${note}`);
+      if (currentNote) {
+        currentNote.classList.add("pressed")
+      }
     }
   }
 
   function noteOff(note) {
     if (voices[note] != null) {
-      console.log(voices);
       voices[note].noteOff();
       voices[note] = null;
+      var currentNote = document.getElementById(`k${note}`);
+      if (currentNote) {
+        currentNote.classList.remove("pressed")
+      }
     }
   }
 
