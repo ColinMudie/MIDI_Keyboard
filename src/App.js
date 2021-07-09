@@ -1,8 +1,12 @@
 import './App.css';
 import WhiteKeys from './components/WhiteKeys/WhiteKeys';
 import BlackKeys from './components/BlackKeys/BlackKeys';
+import ChordInterface from './components/ChordInterface/ChordInterface';
+import React, {useState} from 'react';
 
 function App() {
+  useState()
+
   var voices = [];
   var AudioContext;
   var audioCtx;
@@ -10,16 +14,17 @@ function App() {
   var volumeNode;
 
   function initAudio() {
+
     AudioContext = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContext({
       latencyHint: "interactive",
-      sampleRate: 44100,
+      sampleRate: 48100,
     });
     volumeNode = audioCtx.createGain();
-    volumeNode.gain.value = 0.1;
-    compressor = audioCtx.createDynamicsCompressor();
-    volumeNode.connect(compressor);
-    compressor.connect(audioCtx.destination);
+    volumeNode.gain.value = 0.3;
+    // compressor = audioCtx.createDynamicsCompressor();
+    volumeNode.connect(audioCtx.destination);
+    // compressor.connect(audioCtx.destination);
     console.log(`initialize audio`);
   }
 
@@ -68,6 +73,8 @@ function App() {
     }
   }
 
+  
+
   function noteOn(note, velocity) {
     console.log(`note on: ${note}`);
     if (voices[note] == null) {
@@ -100,7 +107,7 @@ function App() {
     //Oscillator
     this.osc = audioCtx.createOscillator();
     this.osc.frequency.value = this.originalFrequency;
-    this.osc.type = "sine";
+    this.osc.type = "square";
 
     //Modulator
     // this.modulator = audioCtx.createOscillator();
@@ -120,21 +127,30 @@ function App() {
     this.filter = audioCtx.createBiquadFilter();
     this.filter.type = "lowpass";
     this.filter.Q.value = 10;
-    this.filter.frequency.value = 300;
+    this.filter.frequency.value = 400;
     this.oscGain.connect(this.filter);
 
     this.env = {
-      attack: 0.05,
+      attack: 0.01,
       decay: 0.1,
+      velocity: velocity,
       sustain: 0.1,
-      release: 0.1,
+      release: 0.01,
     };
     this.envelope = audioCtx.createGain();
     this.filter.connect(this.envelope);
     
 
     let now = audioCtx.currentTime;
-    this.envelope.connect(volumeNode);
+    this.compressor = audioCtx.createDynamicsCompressor();
+    this.compressor.threshold.setValueAtTime(-50, audioCtx.currentTime);
+    this.compressor.knee.setValueAtTime(30, audioCtx.currentTime);
+    this.compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+    this.compressor.attack.setValueAtTime(0, audioCtx.currentTime);
+    this.compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+
+    this.envelope.connect(this.compressor);
+    this.compressor.connect(volumeNode)
     this.osc.start(now);
     // this.modulator.start(now);
     this.noteOn();
@@ -145,11 +161,11 @@ function App() {
     this.envelope.gain.cancelScheduledValues(now)
     this.envelope.gain.setValueAtTime(0, now + this.easing);
     this.envelope.gain.linearRampToValueAtTime(
-      1,
+      this.env.velocity,
       now + this.env.attack + this.easing
     );
     this.envelope.gain.linearRampToValueAtTime(
-      this.env.sustain,
+      this.env.velocity - this.env.sustain,
       now + this.env.attack + this.env.decay + this.easing
     );
   }
@@ -157,11 +173,10 @@ function App() {
 
   Voice.prototype.noteOff = function () {
     let now = audioCtx.currentTime;
-    let release = 0.005 + 0.1;
 
     this.envelope.gain.cancelScheduledValues(now);
     // this.envelope.gain.setValueAtTime(this.envelope.gain.value, now);
-    this.envelope.gain.setTargetAtTime(0, now, release);
+    this.envelope.gain.setTargetAtTime(0, now, this.easing + this.env.release);
 
     // this.osc.stop(now + release);
     // this.modulator.stop(now + release);
@@ -174,7 +189,8 @@ function App() {
   return (
     <div className="App">
       <h1>MIDI Keyboard</h1>
-      <button onClick={initAudio}>Begin</button>
+      <button className="startBtn" onClick={initAudio}>Begin</button>
+      <ChordInterface/>
       <BlackKeys/>
       <WhiteKeys/>
     </div>
