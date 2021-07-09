@@ -1,5 +1,5 @@
 body {
-  background-color: #52796F;
+  background-color: #f1e1ec;
 }
 
 .App {
@@ -29,12 +29,12 @@ body {
   display: inline-block;
 }
 .black {
-  background: #2f3e46;
+  background: #272937;
   width: 1.5%;
   height: 150px;
   margin-left: 0.25%;
   margin-right: 0.25%;
-  border: 1px solid black;
+  border: 1px solid #272937;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
 }
@@ -45,15 +45,15 @@ body {
   border: 1px solid rgba(0, 0, 0, 0);
 }
 .white {
-  background: #cad2c5;
+  background: #faf1f9;
   width: 2%;
   height: 250px;
-  border: 1px solid black;
+  border: 1px solid #272937;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
 }
 .pressed {
-  background: #84a98c;
+  background: #8a554e;
 }
 
 @media (prefers-reduced-motion: no-preference) {

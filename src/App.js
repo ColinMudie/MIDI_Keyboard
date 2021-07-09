@@ -16,7 +16,7 @@ function App() {
       sampleRate: 44100,
     });
     volumeNode = audioCtx.createGain();
-    volumeNode.gain.value = 0.5;
+    volumeNode.gain.value = 0.1;
     compressor = audioCtx.createDynamicsCompressor();
     volumeNode.connect(compressor);
     compressor.connect(audioCtx.destination);
@@ -96,11 +96,20 @@ function App() {
 
   function Voice(note, velocity) {
     this.originalFrequency = frequencyFromNoteNumber(note);
-
+    
     //Oscillator
     this.osc = audioCtx.createOscillator();
     this.osc.frequency.value = this.originalFrequency;
-    this.osc.type = "square";
+    this.osc.type = "sine";
+
+    //Modulator
+    // this.modulator = audioCtx.createOscillator();
+    // this.modulator.frequency.value = this.originalFrequency;
+    // this.modulator.detune.value= 200;
+    // this.modulatorGain = audioCtx.createGain();
+    // this.modulatorGain.value = 3000;
+    // this.modulator.connect(this.modulatorGain);
+    // this.modulatorGain.connect(this.osc.detune);
 
     // Oscillator Gain 'VCA'
     this.oscGain = audioCtx.createGain();
@@ -110,32 +119,56 @@ function App() {
     //Filter
     this.filter = audioCtx.createBiquadFilter();
     this.filter.type = "lowpass";
-    this.filter.Q.value = 0;
-    this.filter.frequency.value = 400;
+    this.filter.Q.value = 10;
+    this.filter.frequency.value = 300;
     this.oscGain.connect(this.filter);
 
+    this.env = {
+      attack: 0.05,
+      decay: 0.1,
+      sustain: 0.1,
+      release: 0.1,
+    };
     this.envelope = audioCtx.createGain();
     this.filter.connect(this.envelope);
+    
+
+    let now = audioCtx.currentTime;
     this.envelope.connect(volumeNode);
-
-    var now = audioCtx.currentTime;
-    this.envelope.gain.value = 0.0;
-    this.envelope.gain.setValueAtTime(0.0, now);
-    this.envelope.gain.linearRampToValueAtTime(1.0, (now + 0.5));
-    this.envelope.gain.setTargetAtTime(10, (now + 0.5), (10 + 0.001));
-
-    this.osc.start(0);
+    this.osc.start(now);
+    // this.modulator.start(now);
+    this.noteOn();
+  }
+  Voice.prototype.noteOn = function () {
+    let now = audioCtx.currentTime;
+    this.easing = 0.005;
+    this.envelope.gain.cancelScheduledValues(now)
+    this.envelope.gain.setValueAtTime(0, now + this.easing);
+    this.envelope.gain.linearRampToValueAtTime(
+      1,
+      now + this.env.attack + this.easing
+    );
+    this.envelope.gain.linearRampToValueAtTime(
+      this.env.sustain,
+      now + this.env.attack + this.env.decay + this.easing
+    );
   }
 
+
   Voice.prototype.noteOff = function () {
-    var now = audioCtx.currentTime;
-    var release = now + 0.5;
+    let now = audioCtx.currentTime;
+    let release = 0.005 + 0.1;
 
     this.envelope.gain.cancelScheduledValues(now);
-    this.envelope.gain.setValueAtTime(this.envelope.gain.value, now);
-    this.envelope.gain.setTargetAtTime(0.0, now, release);
+    // this.envelope.gain.setValueAtTime(this.envelope.gain.value, now);
+    this.envelope.gain.setTargetAtTime(0, now, release);
 
-    this.osc.stop(release);
+    // this.osc.stop(now + release);
+    // this.modulator.stop(now + release);
+    setTimeout(()=> {
+      this.osc.disconnect();
+      console.log('osc killed');
+    }, 10000);
   }
 
   return (
