@@ -2,33 +2,43 @@ import './App.css';
 import WhiteKeys from './components/WhiteKeys/WhiteKeys';
 import BlackKeys from './components/BlackKeys/BlackKeys';
 import ChordInterface from './components/ChordInterface/ChordInterface';
-import React, {useState} from 'react';
+import React, { useReducer } from 'react';
+
+export const VoiceContext = React.createContext()
+
+const initialState = [];
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'voice':
+      state = action.voice
+      return [...state];  
+    case 'reset':
+      return initialState;
+    default:
+      return initialState;
+  }
+}
 
 function App() {
-  useState()
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  var voices = [];
-  var AudioContext;
-  var audioCtx;
-  var compressor;
-  var volumeNode;
+  let voices = [];
+  let currentVoices =[];
+  let audioCtx;
+  let volumeNode;
+  let note;
 
   function initAudio() {
-
-    AudioContext = window.AudioContext || window.webkitAudioContext;
+    let AudioContext = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContext({
       latencyHint: "interactive",
       sampleRate: 48100,
     });
     volumeNode = audioCtx.createGain();
-    volumeNode.gain.value = 0.3;
-    // compressor = audioCtx.createDynamicsCompressor();
+    volumeNode.gain.value = 0.1;
     volumeNode.connect(audioCtx.destination);
-    // compressor.connect(audioCtx.destination);
     console.log(`initialize audio`);
   }
-
-    initAudio();
 
   //checks to see if WebMIDI is supported by the current browser
   if (navigator.requestMIDIAccess) {
@@ -41,60 +51,68 @@ function App() {
     .then(onMIDISuccees, onMIDIFailure);
 
   function onMIDISuccees(midiAccess) {
-    console.log(audioCtx);
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
     for (var input of midiAccess.inputs.values())
       input.onmidimessage = getMIDIMessage;
+    
   }
   function onMIDIFailure() {
     console.log('Could not access your MIDI devices');
   }
 
   function getMIDIMessage(midiMessage) {
-    console.log(midiMessage);
     var command = midiMessage.data[0];
-    var note = midiMessage.data[1];
+    note = midiMessage.data[1];
     var velocity = (midiMessage.data.length > 2) ? midiMessage.data[2] : 0;
-    switch (command) {
-      case 151: // noteOn
-        if (velocity > 0) {
-          noteOn(note, velocity);
-        } else {
+    if (audioCtx !== undefined) {
+      switch (command) {
+        case 151: // noteOn
+          if (velocity > 0) {
+            noteOn(note, velocity);
+            // addToVoicesArray(note)
+          } else {
+            noteOff(note);
+            // removeFromVoicesArray(note)
+          }
+          break;
+        case 135: // noteOff
           noteOff(note);
-        }
-        break;
-      case 135: // noteOff
-        noteOff(note);
-        break;
-      default:
-        break;
+          // removeFromVoicesArray(note)
+          break;
+        default:
+          break;
+      }
     }
   }
 
-  
-
   function noteOn(note, velocity) {
-    console.log(`note on: ${note}`);
     if (voices[note] == null) {
       voices[note] = new Voice(note, velocity);
+      currentVoices.push(note);
+      console.log(currentVoices)
       var currentNote = document.getElementById(`k${note}`);
       if (currentNote) {
         currentNote.classList.add("pressed")
       }
+      dispatch({type: 'voice', voice: currentVoices})
     }
   }
 
   function noteOff(note) {
-    if (voices[note] != null) {
+    if (voices[note] !== null) {
       voices[note].noteOff();
       voices[note] = null;
+      let noteIndex = currentVoices.findIndex(element => element === note);
+      console.log(currentVoices)
+      currentVoices.splice(noteIndex, 1);
+      console.log(currentVoices)
       var currentNote = document.getElementById(`k${note}`);
       if (currentNote) {
         currentNote.classList.remove("pressed")
       }
+    
+      dispatch({type: 'voice', voice: currentVoices})
     }
+    
   }
 
   function frequencyFromNoteNumber(note) {
@@ -108,15 +126,6 @@ function App() {
     this.osc = audioCtx.createOscillator();
     this.osc.frequency.value = this.originalFrequency;
     this.osc.type = "square";
-
-    //Modulator
-    // this.modulator = audioCtx.createOscillator();
-    // this.modulator.frequency.value = this.originalFrequency;
-    // this.modulator.detune.value= 200;
-    // this.modulatorGain = audioCtx.createGain();
-    // this.modulatorGain.value = 3000;
-    // this.modulator.connect(this.modulatorGain);
-    // this.modulatorGain.connect(this.osc.detune);
 
     // Oscillator Gain 'VCA'
     this.oscGain = audioCtx.createGain();
@@ -140,7 +149,6 @@ function App() {
     this.envelope = audioCtx.createGain();
     this.filter.connect(this.envelope);
     
-
     let now = audioCtx.currentTime;
     this.compressor = audioCtx.createDynamicsCompressor();
     this.compressor.threshold.setValueAtTime(-50, audioCtx.currentTime);
@@ -152,7 +160,6 @@ function App() {
     this.envelope.connect(this.compressor);
     this.compressor.connect(volumeNode)
     this.osc.start(now);
-    // this.modulator.start(now);
     this.noteOn();
   }
   Voice.prototype.noteOn = function () {
@@ -170,23 +177,17 @@ function App() {
     );
   }
 
-
   Voice.prototype.noteOff = function () {
     let now = audioCtx.currentTime;
-
     this.envelope.gain.cancelScheduledValues(now);
-    // this.envelope.gain.setValueAtTime(this.envelope.gain.value, now);
     this.envelope.gain.setTargetAtTime(0, now, this.easing + this.env.release);
-
-    // this.osc.stop(now + release);
-    // this.modulator.stop(now + release);
     setTimeout(()=> {
       this.osc.disconnect();
-      console.log('osc killed');
     }, 10000);
   }
 
   return (
+    <VoiceContext.Provider value={{voiceState: state, voiceDispatch: dispatch}}>
     <div className="App">
       <h1>MIDI Keyboard</h1>
       <button className="startBtn" onClick={initAudio}>Begin</button>
@@ -194,7 +195,7 @@ function App() {
       <BlackKeys/>
       <WhiteKeys/>
     </div>
-    
+    </VoiceContext.Provider>
   );
 }
 

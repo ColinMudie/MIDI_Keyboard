@@ -1,0 +1,7 @@
+.chordInterface{
+    margin: 0 auto;
+    width: 60%;
+    height: 250px;
+    border: 4px solid black;
+    background-color: rgba(0, 255, 255, 0.166)
+}
