@@ -3,7 +3,7 @@ import WhiteKeys from './components/WhiteKeys/WhiteKeys';
 import BlackKeys from './components/BlackKeys/BlackKeys';
 import ChordInterface from './components/ChordInterface/ChordInterface';
 import React, { useReducer } from 'react';
-
+import MidiNoteConverter from './utils/MidiNoteConverter';
 export const VoiceContext = React.createContext()
 
 const initialState = [];
@@ -88,12 +88,14 @@ function App() {
     if (voices[note] == null) {
       voices[note] = new Voice(note, velocity);
       currentVoices.push(note);
+      currentVoices.sort(function(a, b) { return a-b})
       console.log(currentVoices)
       var currentNote = document.getElementById(`k${note}`);
       if (currentNote) {
         currentNote.classList.add("pressed")
       }
-      dispatch({type: 'voice', voice: currentVoices})
+      // let convertedVoices = MidiNoteConverter(currentVoices)
+      dispatch({ type: 'voice', voice: currentVoices})
     }
   }
 
@@ -109,7 +111,6 @@ function App() {
       if (currentNote) {
         currentNote.classList.remove("pressed")
       }
-    
       dispatch({type: 'voice', voice: currentVoices})
     }
     

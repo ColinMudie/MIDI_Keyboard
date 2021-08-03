@@ -1,13 +1,12 @@
 import React, {useContext} from 'react';
 import './ChordInterface.css';
 import { VoiceContext } from '../../App';
+import MidiNoteConverter from '../../utils/MidiNoteConverter';
 function ChordInterface () {
     const voiceContext = useContext(VoiceContext);
-    // const [state, dispatch] = useVoiceContext();
-    // console.log(state)
     return (
         <div className="chordInterface">
-            {voiceContext.voiceState}
+            {MidiNoteConverter(voiceContext.voiceState)}
         </div>
     )
 }
