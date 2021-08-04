@@ -60,6 +60,9 @@ body {
 .pressed {
   background: #8a554e;
 }
+.correct {
+  background: #658a4e;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {

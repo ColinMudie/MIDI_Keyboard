@@ -2,8 +2,10 @@ import './App.css';
 import WhiteKeys from './components/WhiteKeys/WhiteKeys';
 import BlackKeys from './components/BlackKeys/BlackKeys';
 import ChordInterface from './components/ChordInterface/ChordInterface';
-import React, { useReducer } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import MidiNoteConverter from './utils/MidiNoteConverter';
+import minor9 from './utils/Minor9';
+
 export const VoiceContext = React.createContext()
 
 const initialState = [];
@@ -40,12 +42,15 @@ function App() {
     console.log(`initialize audio`);
   }
 
-  //checks to see if WebMIDI is supported by the current browser
-  if (navigator.requestMIDIAccess) {
-    console.log('This browser supports WebMIDI!');
-  } else {
-    console.log('WebMIDI is not supported in this browser');
-  }
+  useEffect(() => {
+    //checks to see if WebMIDI is supported by the current browser
+    if (navigator.requestMIDIAccess) {
+      console.log('This browser supports WebMIDI!');
+    } else {
+      console.log('WebMIDI is not supported in this browser');
+    }
+  }, []);
+  
 
   navigator.requestMIDIAccess()
     .then(onMIDISuccees, onMIDIFailure);
@@ -89,9 +94,11 @@ function App() {
       voices[note] = new Voice(note, velocity);
       currentVoices.push(note);
       currentVoices.sort(function(a, b) { return a-b})
-      console.log(currentVoices)
       var currentNote = document.getElementById(`k${note}`);
-      if (currentNote) {
+      //minor9.C needs to be a variable that will change based on the current chord asked to be played.
+      if (currentNote && minor9.C.includes(MidiNoteConverter(note))){
+        currentNote.classList.add("correct")
+      } else if (currentNote) {
         currentNote.classList.add("pressed")
       }
       // let convertedVoices = MidiNoteConverter(currentVoices)
@@ -104,12 +111,11 @@ function App() {
       voices[note].noteOff();
       voices[note] = null;
       let noteIndex = currentVoices.findIndex(element => element === note);
-      console.log(currentVoices)
       currentVoices.splice(noteIndex, 1);
-      console.log(currentVoices)
       var currentNote = document.getElementById(`k${note}`);
       if (currentNote) {
         currentNote.classList.remove("pressed")
+        currentNote.classList.remove("correct")
       }
       dispatch({type: 'voice', voice: currentVoices})
     }
