@@ -8,12 +8,23 @@ import minor9 from './utils/Minor9';
 
 export const VoiceContext = React.createContext()
 
-const initialState = [];
+const initialState = {
+  voice: [],
+  chord: []
+};
 const reducer = (state, action) => {
   switch (action.type) {
     case 'voice':
-      state = action.voice
-      return [...state];  
+      // console.log(action.voice);
+      return {
+        ...state,
+        voice: action.voice
+      }
+    case 'chord':
+      return {
+        ...state,
+        chord: action.chord
+      }; 
     case 'reset':
       return initialState;
     default:
@@ -101,7 +112,7 @@ function App() {
       } else if (currentNote) {
         currentNote.classList.add("pressed")
       }
-      // let convertedVoices = MidiNoteConverter(currentVoices)
+      console.log(currentVoices)
       dispatch({ type: 'voice', voice: currentVoices})
     }
   }
