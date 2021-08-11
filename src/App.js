@@ -1,30 +1,36 @@
+import React, { useReducer, useEffect, useContext } from 'react';
 import './App.css';
 import WhiteKeys from './components/WhiteKeys/WhiteKeys';
 import BlackKeys from './components/BlackKeys/BlackKeys';
 import ChordInterface from './components/ChordInterface/ChordInterface';
-import React, { useReducer, useEffect } from 'react';
+import ChordButton from './components/ChordButton/ChordButton';
+
 import MidiNoteConverter from './utils/MidiNoteConverter';
 import minor9 from './utils/Minor9';
 
 export const VoiceContext = React.createContext()
-
 const initialState = {
   voice: [],
-  chord: []
+  chord: [],
+  chordNotes: []
 };
 const reducer = (state, action) => {
   switch (action.type) {
-    case 'voice':
-      // console.log(action.voice);
+    case 'VOICE':
       return {
         ...state,
         voice: action.voice
       }
-    case 'chord':
+    case 'CHORD':
       return {
         ...state,
         chord: action.chord
-      }; 
+      };
+    case 'CHORD_NOTES':
+      return {
+        ...state,
+        chordNotes: action.chordNotes
+      };
     case 'reset':
       return initialState;
     default:
@@ -33,6 +39,7 @@ const reducer = (state, action) => {
 }
 
 function App() {
+  const voiceContext = useContext(VoiceContext);
   const [state, dispatch] = useReducer(reducer, initialState);
 
   let voices = [];
@@ -40,6 +47,7 @@ function App() {
   let audioCtx;
   let volumeNode;
   let note;
+  let goalChord;
 
   function initAudio() {
     let AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -84,15 +92,12 @@ function App() {
         case 151: // noteOn
           if (velocity > 0) {
             noteOn(note, velocity);
-            // addToVoicesArray(note)
           } else {
             noteOff(note);
-            // removeFromVoicesArray(note)
           }
           break;
         case 135: // noteOff
           noteOff(note);
-          // removeFromVoicesArray(note)
           break;
         default:
           break;
@@ -105,15 +110,17 @@ function App() {
       voices[note] = new Voice(note, velocity);
       currentVoices.push(note);
       currentVoices.sort(function(a, b) { return a-b})
+    
       var currentNote = document.getElementById(`k${note}`);
       //minor9.C needs to be a variable that will change based on the current chord asked to be played.
-      if (currentNote && minor9.C.includes(MidiNoteConverter(note))){
+
+      if (currentNote && minor9.C.notes.includes(MidiNoteConverter(note))){
         currentNote.classList.add("correct")
       } else if (currentNote) {
         currentNote.classList.add("pressed")
       }
       console.log(currentVoices)
-      dispatch({ type: 'voice', voice: currentVoices})
+      dispatch({ type: 'VOICE', voice: currentVoices})
     }
   }
 
@@ -128,7 +135,7 @@ function App() {
         currentNote.classList.remove("pressed")
         currentNote.classList.remove("correct")
       }
-      dispatch({type: 'voice', voice: currentVoices})
+      dispatch({type: 'VOICE', voice: currentVoices})
     }
     
   }
@@ -209,6 +216,18 @@ function App() {
     <div className="App">
       <h1>MIDI Keyboard</h1>
       <button className="startBtn" onClick={initAudio}>Begin</button>
+        <ChordButton name={'C min9'} />
+        <ChordButton name={'Db min9'} />
+        <ChordButton name={'D min9'} />
+        <ChordButton name={'Eb min9'} />
+        <ChordButton name={'E min9'} />
+        <ChordButton name={'F min9'} />
+        <ChordButton name={'Gb min9'} />
+        <ChordButton name={'G min9'} />
+        <ChordButton name={'Ab min9'} />
+        <ChordButton name={'A min9'} />
+        <ChordButton name={'Bb min9'} />
+        <ChordButton name={'B min9'} />
       <ChordInterface/>
       <BlackKeys/>
       <WhiteKeys/>
